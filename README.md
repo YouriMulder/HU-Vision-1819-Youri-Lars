@@ -4,5 +4,5 @@
 Wij hebben er voor gekozen om de edge detection te gaan maken.
 
 # Team
-Lars verteeg
+Lars Verteeg
 Youri Mulder
