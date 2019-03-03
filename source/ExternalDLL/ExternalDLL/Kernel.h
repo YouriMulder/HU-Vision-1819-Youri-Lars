@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IntensityImage.h"
+#include <vector>
 
 namespace Kernel {
 	template<typename T>
@@ -53,6 +54,11 @@ namespace Kernel {
 	}
  
 	void createGuassianKernel(double GKernel[][5]);
-	void sobelFilter(const IntensityImage &sourceImage, IntensityImage &destImage);
+	void sobelFilter(const IntensityImage &sourceImage, std::vector<std::vector<float>> &destImage, std::vector<std::vector<float>> &directionImage);
+	double getDegrees(double radians);
+	double roundAngle(double angleRadians);
+	void nonMaxSupp(std::vector<std::vector<float>> &image, std::vector<std::vector<float>> &directions);
+	void doubleThreshold(std::vector<std::vector<float>> &image);
+	void tracking(IntensityImage &image, const Intensity &weak, const Intensity &strong);
 };
 
