@@ -44,21 +44,24 @@ namespace Kernel {
 
 				for (int kernelY = 0; kernelY < kHeight; ++kernelY) {
 					for (int kernelX = 0; kernelX < kWidth; ++kernelX) {
-						accumulator += sourceImage.getPixel(topLeftY + kernelY, topLeftX + kernelX) * kernel[kernelY][kernelX];
+						accumulator += sourceImage.getPixel(topLeftX + kernelX, topLeftY + kernelY) * kernel[kernelY][kernelX];
 					}
 				}
 
-				destinationImage.setPixel(y, x, Intensity(accumulator));
+				destinationImage.setPixel(x, y, Intensity(accumulator));
 			}
 		}
 	}
  
-	void createGuassianKernel(double GKernel[][5]);
+	void createGuassianKernel(double GKernel[][5], float sigma);
 	void sobelFilter(const IntensityImage &sourceImage, std::vector<std::vector<float>> &destImage, std::vector<std::vector<float>> &directionImage);
 	double getDegrees(double radians);
 	double roundAngle(double angleRadians);
 	void nonMaxSupp(std::vector<std::vector<float>> &image, std::vector<std::vector<float>> &directions);
-	void doubleThreshold(std::vector<std::vector<float>> &image);
-	void tracking(IntensityImage &image, const Intensity &weak, const Intensity &strong);
+	void doubleThreshold(std::vector<std::vector<float>> &image, const Intensity& lowThreshold, const Intensity& highThreshold, const Intensity& strong, const Intensity& weak);
+	void tracking(std::vector<std::vector<float>> &image, const Intensity &weak, const Intensity &strong);
+	void toHistogram(const std::vector<std::vector<float>> &image, std::array<float, 256> &histogram);
+	double otsu(const std::vector<std::vector<float>> &image, std::array<float, 256>& histogram);
+
 };
 

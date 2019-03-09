@@ -4,15 +4,15 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <array>
 
 #include "ImageFactory.h"
 /*void Kernel::apply(const IntensityImage &sourceImage, IntensityImage *destinationImage, int kWidth, int kHeight, double kernel[5][5]) {
 	 
 }*/
 
-void Kernel::createGuassianKernel(double GKernel[][5]) {
+void Kernel::createGuassianKernel(double GKernel[][5], float sigma) {
 	// intialising standard deviation to 1.0 
-	double sigma = 1.4;
 	double r, s = 2.0 * sigma * sigma;
 
 	// sum is for normalization 
@@ -55,47 +55,38 @@ void Kernel::sobelFilter(const IntensityImage &sourceImage, std::vector<std::vec
 	int kOffsetX = KERNEL_X / 2;
 	int kOffsetY = KERNEL_Y / 2;
 
-	for (int y = kOffsetY; y <= sourceImage.getHeight() - kOffsetY; ++y) {
-		for (int x = kOffsetX; x <= sourceImage.getWidth() - kOffsetX; ++x) {
+	float max = 0;
 
+	for (int y = 1; y < sourceImage.getHeight()-1; ++y) {
+		for (int x = 1; x < sourceImage.getWidth()-1; ++x) {
+			accumulatorVertical = 0;
+			accumulatorHorizontal = 0;
 			int topLeftX = x - kOffsetX;
 			int topLeftY = y - kOffsetY;
 
 			for (int kernelY = 0; kernelY < KERNEL_Y; ++kernelY) {
 				for (int kernelX = 0; kernelX < KERNEL_X; ++kernelX) {
-					accumulatorVertical += sourceImage.getPixel(topLeftY + kernelY, topLeftX + kernelX) * kernelVertical[kernelY][kernelX];
-					accumulatorHorizontal += sourceImage.getPixel(topLeftY + kernelY, topLeftX + kernelX) * kernelHorizontal[kernelY][kernelX];
+					accumulatorVertical += sourceImage.getPixel(topLeftX + kernelX, topLeftY + kernelY) * kernelVertical[kernelY][kernelX];
+					accumulatorHorizontal += sourceImage.getPixel(topLeftX + kernelX, topLeftY + kernelY) * kernelHorizontal[kernelY][kernelX];
 				}
 			}
 
-			double gradient = std::sqrt((accumulatorHorizontal * accumulatorHorizontal) + (accumulatorVertical * accumulatorVertical));
-			double direction = std::atan2(accumulatorVertical, accumulatorHorizontal);
-			accumulatorVertical = 0;
-			accumulatorHorizontal = 0;
-			
+			float gradient = std::sqrt((accumulatorHorizontal * accumulatorHorizontal) + (accumulatorVertical * accumulatorVertical));
 			destImage[y][x] = gradient;
-			directionImage[y][x] = direction;
-		}
-	}
-	float max = destImage[0][0];
-	float oldMax = max;
-
-
-	for (const auto& row : destImage) {
-		for (const auto& value : row) {
-			oldMax = max;
-			max = std::max(max, value);
 			
+			max = destImage[y][x] > max ? destImage[y][x] : max;
+			directionImage[y][x] = std::atan2(accumulatorVertical, accumulatorHorizontal);
 		}
 	}
-	std::cout << oldMax << "\n";
 
 	for (auto& row : destImage) {
 		for (auto& value : row) {
-			//value = value / max * 255);
-			//std::cout << value << "\n";
+			value = 255.0f * value / max;
 		}
 	}
+
+
+
 }
 
 double Kernel::getDegrees(double radians) {
@@ -116,63 +107,56 @@ double Kernel::roundAngle(double angleDeg) {
 }
 
 void Kernel::nonMaxSupp(std::vector<std::vector<float>> &image, std::vector<std::vector<float>> &angle) {
-	for (auto& row : angle) {
-		for (auto& angle : row) {
-			angle *= 180 / 3.14;
-			if (angle < 0) {
-				angle += 180;
-			}
-		}
-	}
 
 	auto height = image.size() > angle.size() ? image.size() : angle.size();
 	auto width = image[0].size() > angle[0].size() ? image[0].size() : angle[0].size();
-	std::vector<std::vector<float>> dest(image.size(), std::vector<float>(image.size(), 0));
-	for (int y = 1; y < height; ++y) {
-		for (int x = 1; x < width; ++x) {
-			int q = 255;
-			int r = 255;
+	std::vector<std::vector<float>> dest(image.size(), std::vector<float>(image[0].size(), 0));
+	for (int y = 1; y < height - 1; ++y) {
+		for (int x = 1; x < width - 1; ++x) {
+			float theta = getDegrees(angle[y][x]) + 180;
+			//std::cout << theta << "\n";
+			// 0 degrees
+			if ((theta >= 0 && theta <= 22.5) ||
+				(theta >= 337.5 && theta <= 360)) {
+				if ( (image[y][x] >= image[y][x - 1]) && (image[y][x] >= image[y][x + 1]) ) {
+					dest[y][x] = image[y][x];
+				}
+			}
+			// 45 degrees
+			else if ((theta >= 22.5 && theta <= 67.5) ||
+				(theta >= 202.5 && theta <= 247.5)) {
+				if ((image[y][x] >= image[y - 1][x+1]) && (image[y][x] >= image[y+1][x-1])) {
+					dest[y][x] = image[y][x];
+				}
+			}
+			// 90 degrees
+			else if ((theta >= 67.5 && theta <= 112.5) ||
+				(theta >= 247.5 && theta <= 292.5)) {
+				if ((image[y][x] >= image[y - 1][x]) && (image[y][x] >= image[y + 1][x])) {
+					dest[y][x] = image[y][x];
+				}
+			}
+			// 135 degrees
+			else if ((theta >= 112.5 && theta <= 157.5) ||
+				(theta >= 292.5 && theta <= 337.5)) {
+				if ((image[y][x] >= image[y-1][x+1]) && (image[y][x] >= image[y + 1][x + 1])) {
+					dest[y][x] = image[y][x];
+				}
+			}
 
-			if ((0 <= angle[y][x] < 22.5) || (157.5 <= angle[y][x] <= 180)) {
-				q = image[y][x + 1];
-				r = image[y][x - 1];
-			}
-			//angle 45
-			else if (22.5 <= angle[y][x] < 67.5) {
-				q = image[y + 1][x - 1];
-				r = image[y - 1][x + 1];
-
-			}
-			//angle 90
-			else if (67.5 <= angle[y][x] < 112.5) {
-				q = image[y + 1][x];
-				r = image[y - 1][x];
-			}
-			//angle 135
-			else if (112.5 <= angle[y][x] < 157.5) {
-				q = image[y - 1][x - 1];
-				r = image[y + 1][x + 1];
-			}
-			
-			if(!(image[y][x] >= q) && (image[y][x] >= r)) {
-				image[y][x] = 0;
-			}
 		}
 	}
-
+	image = dest;
 }
 
-void Kernel::doubleThreshold(std::vector<std::vector<float>> &image) {
-	double lowerThreshold = 70;
-	double upperThreshold = 45;
-
+void Kernel::doubleThreshold(std::vector<std::vector<float>> &image, const Intensity& lowThreshold, const Intensity& highThreshold, const Intensity& strong, const Intensity& weak) {
 	for (int y = 0; y < image.size(); ++y) {
 		for (int x = 0; x < image[y].size(); ++x) {
 			auto value = image[y][x];
-			if (value > upperThreshold) {
-				image[y][x] = 255;
-			} else if (value >= lowerThreshold && value <= upperThreshold) {
-				image[y][x] = 255;
+			if (value > highThreshold) {
+				image[y][x] = strong;
+			} else if (value >= lowThreshold && value <= highThreshold) {
+				image[y][x] = weak;
 			} else {
 				image[y][x] = 0;
 			}
@@ -180,22 +164,62 @@ void Kernel::doubleThreshold(std::vector<std::vector<float>> &image) {
 	}
 }
 
-void Kernel::tracking(IntensityImage &image, const Intensity &weak, const Intensity &strong) {
-	for (int y = 1; y < image.getHeight(); ++y) {
-		for (int x = 1; x < image.getWidth(); ++x) {
-			auto value = image.getPixel(x, y);
+void Kernel::tracking(std::vector<std::vector<float>> &image, const Intensity &weak, const Intensity &strong) {
+	for (int y = 1; y < image.size() - 1; ++y) {
+		for (int x = 1; x < image[y].size() - 1; ++x) {
+			auto value = image[y][x];
 			if (value == weak) {
-				if (image.getPixel(x + 1, y) == strong 
-					|| image.getPixel(x - 1, y) == strong
-					|| image.getPixel(x, y + 1) == strong 
-					|| image.getPixel(x, y - 1) == strong
-					|| image.getPixel(x + 1, y + 1) == strong 
-					|| image.getPixel(x - 1, y - 1) == strong) { 
-							image.setPixel(x, y, strong);
+				if (image[y][x + 1] == strong 
+					|| image[y][x - 1] == strong
+					|| image[y + 1][x] == strong
+					|| image[y - 1][x] == strong
+					|| image[y + 1][x + 1] == strong
+					|| image[y - 1][x - 1] == strong) {
+							image[y][x] = strong;
 				} else {
-					image.setPixel(x, y, 0);
+					image[y][x] = 0;
 				}
 			}
 		}
 	}
+}
+
+void Kernel::toHistogram(const std::vector<std::vector<float>> &image, std::array<float, 256>& histogram) {
+	histogram.fill(0);
+	for (const auto row : image) {
+		for (const int value : row) {
+			++histogram[value];
+		}
+	}
+}
+
+double Kernel::otsu(const std::vector<std::vector<float>> &image, std::array<float, 256>& histogram) {
+	int threshold = 0;
+
+	int total = image.size() * image[0].size();
+	
+	float sum = 0;
+	float sumB = 0;
+	int wB = 0;
+	float maximum = 0;
+
+	for (int i = 0; i < histogram.size(); ++i) {
+		sum += i * histogram[i];
+	}
+
+	for (int i = 0; i < histogram.size(); ++i) {
+		wB += histogram[i];
+		int wF = total - wB;
+		if (wB == 0 || wF == 0) continue;
+
+		sumB += i * histogram[i];
+		auto mF = (sum - sumB) / wF;
+		float between = wB * wF * ((sumB / wB) - mF) * ((sumB / wB) - mF);
+		if (between >= maximum) {
+			threshold = i;
+			maximum = between;
+		}
+	}
+	
+	return threshold;
 }

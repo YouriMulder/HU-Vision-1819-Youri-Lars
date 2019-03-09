@@ -78,7 +78,7 @@ bool executeSteps(DLLExecution * executor) {
 	}
 	ImageIO::saveIntensityImage(*executor->resultPreProcessingStep3, ImageIO::getDebugFileName("Pre-processing-3.png"));
 
-	if (!executor->executePreProcessingStep4(false)) {
+	if (!executor->executePreProcessingStep4(true)) {
 		std::cout << "Pre-processing step 4 failed!" << std::endl;
 		return false;
 	}
