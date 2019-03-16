@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <array>
 
 IntensityImage * StudentPreProcessing::stepToIntensityImage(const RGBImage &image) const {
 	return nullptr;
@@ -22,26 +23,43 @@ IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &i
 
 	// gausian filter
 	double guassian[5][5];
-	Kernel::createGuassianKernel(guassian);
-	Kernel::apply(image, *edgeImage, 5, 5, guassian);
+	Kernel::createGuassianKernel(guassian, 0.33f);
+	//Kernel::apply(image, *edgeImage, 5, 5, guassian);
 	
 	std::vector<std::vector<float>> picture(edgeImage->getHeight(), std::vector<float>(edgeImage->getWidth(), 0));
 	std::vector<std::vector<float>> directions(edgeImage->getHeight(), std::vector<float>(edgeImage->getWidth(), 0));
 
 	Kernel::sobelFilter(*edgeImage, picture, directions);
-	Kernel::nonMaxSupp(picture, directions);
-	Kernel::doubleThreshold(picture);
-	//Kernel::tracking(*nonMaxSuppImage, 50, 255);
+	std::array<float, 256> histogram;
+
+	Kernel::toHistogram(picture, histogram);
+	const Intensity strong = 255;
+	const Intensity weak = 100;
+	const Intensity highTres = Kernel::otsu(picture, histogram);
+	const Intensity lowTres = highTres/2;
+
+	std::cout << "Treshold : " << double(highTres) << "\n";
+	//Kernel::nonMaxSupp(picture, directions);
+	Kernel::doubleThreshold(picture, lowTres, highTres, strong, weak);
+	Kernel::tracking(picture, weak, strong);
 
 	IntensityImage* img = ImageFactory::newIntensityImage(picture[0].size(), picture.size());
 	for (int y = 0; y < img->getHeight(); ++y) {
 		for (int x = 0; x < img->getWidth(); ++x) {
-			img->setPixel(x, y, picture[x][y]);
+			img->setPixel(x, y, picture[y][x]);
 		}
 	}
 	return img;
 }
 
 IntensityImage * StudentPreProcessing::stepThresholding(const IntensityImage &image) const {
-	return nullptr;
+	IntensityImage* thresHolding = ImageFactory::newIntensityImage(image);
+	for (int y = 0; y < thresHolding->getHeight(); ++y) {
+		for (int x = 0; x < thresHolding->getWidth(); ++x) {
+			thresHolding->setPixel(x, y,
+				std::abs(thresHolding->getPixel(x, y) - 255)
+			);
+		}
+	}
+	return thresHolding;
 }
