@@ -3,6 +3,8 @@
 #include "ImageFactory.h"
 
 #include <vector>
+#include <iostream>
+#include <cmath>
 
 std::vector<std::vector<double>> Kernel::applyGuassian(const IntensityImage &image) {
 	const int kernelSize = 5;
@@ -64,8 +66,8 @@ void Kernel::sobelFilter(const std::vector<std::vector<double>> &sourceImage, st
 		{ 1, 2, 1 }
 	}; // initialize sobel horizontal kernel
 
-	double accumulatorVertical = 0;
-	double accumulatorHorizontal = 0;
+	double Gy = 0;
+	double Gx = 0;
 
 	int kOffsetX = KERNEL_X / 2;
 	int kOffsetY = KERNEL_Y / 2;
@@ -74,23 +76,23 @@ void Kernel::sobelFilter(const std::vector<std::vector<double>> &sourceImage, st
 
 	for (int y = 1; y < sourceImage.size() - 1; ++y) {
 		for (int x = 1; x < sourceImage[0].size() - 1; ++x) {
-			accumulatorVertical = 0;
-			accumulatorHorizontal = 0;
+			Gy = 0;
+			Gx = 0;
 			int topLeftX = x - kOffsetX;
 			int topLeftY = y - kOffsetY;
 
 			for (int kernelY = 0; kernelY < KERNEL_Y; ++kernelY) {
 				for (int kernelX = 0; kernelX < KERNEL_X; ++kernelX) {
-					accumulatorVertical += sourceImage[topLeftY + kernelY][topLeftX + kernelX] * kernelVertical[kernelY][kernelX];
-					accumulatorHorizontal += sourceImage[topLeftY + kernelY][topLeftX + kernelX] * kernelHorizontal[kernelY][kernelX];
+					Gy += sourceImage[topLeftY + kernelY][topLeftX + kernelX] * kernelVertical[kernelY][kernelX];
+					Gx += sourceImage[topLeftY + kernelY][topLeftX + kernelX] * kernelHorizontal[kernelY][kernelX];
 				}
 			}
 
-			double gradient = std::sqrt((accumulatorHorizontal * accumulatorHorizontal) + (accumulatorVertical * accumulatorVertical));
+			double gradient = std::sqrt((Gx * Gx) + (Gy * Gy));
 			destImage[y][x] = gradient;
 
 			max = destImage[y][x] > max ? destImage[y][x] : max;
-			directionImage[y][x] = std::atan2(accumulatorVertical, accumulatorHorizontal);
+			directionImage[y][x] = std::atan2(Gy, Gx) ;
 		}
 	}
 
@@ -105,42 +107,49 @@ void Kernel::nonMaxSupp(std::vector<std::vector<double>> &image, std::vector<std
 
 	auto height = image.size() > angle.size() ? image.size() : angle.size();
 	auto width = image[0].size() > angle[0].size() ? image[0].size() : angle[0].size();
-	std::vector<std::vector<double>> dest(image.size(), std::vector<double>(image[0].size(), 0));
-	for (int y = 1; y < height - 1; ++y) {
-		for (int x = 1; x < width - 1; ++x) {
-			double theta = (angle[y][x] * 180) / 3.14 + 180;
-			//std::cout << theta << "\n";
-			// 0 degrees
-			if ((theta >= 0 && theta <= 22.5) ||
-				(theta >= 337.5 && theta <= 360)) {
-				if ((image[y][x] >= image[y][x - 1]) && (image[y][x] >= image[y][x + 1])) {
-					dest[y][x] = image[y][x];
-				}
+	auto dest = image;
+	int min = 0;
+	int max = 0;
+	for (int y = 1; y < dest.size() - 1; ++y) {
+		for (int x = 1; x < dest[y].size() - 1; ++x) {
+			int angleDeg = (angle[y][x] * 180 / 3.14);
+			if (angleDeg < 0) {
+				angleDeg += 180;
 			}
-			// 45 degrees
-			else if ((theta >= 22.5 && theta <= 67.5) ||
-				(theta >= 202.5 && theta <= 247.5)) {
-				if ((image[y][x] >= image[y - 1][x + 1]) && (image[y][x] >= image[y + 1][x - 1])) {
-					dest[y][x] = image[y][x];
-				}
+			if (angleDeg > max) {
+				max = angleDeg;
 			}
-			// 90 degrees
-			else if ((theta >= 67.5 && theta <= 112.5) ||
-				(theta >= 247.5 && theta <= 292.5)) {
-				if ((image[y][x] >= image[y - 1][x]) && (image[y][x] >= image[y + 1][x])) {
-					dest[y][x] = image[y][x];
-				}
-			}
-			// 135 degrees
-			else if ((theta >= 112.5 && theta <= 157.5) ||
-				(theta >= 292.5 && theta <= 337.5)) {
-				if ((image[y][x] >= image[y - 1][x + 1]) && (image[y][x] >= image[y + 1][x + 1])) {
-					dest[y][x] = image[y][x];
-				}
+			if (angleDeg < min) {
+				min = angleDeg;
 			}
 
+			// horizontal
+			if ((angleDeg >= 0 && angleDeg <= 22.5) || (angleDeg >= 157.5 && angleDeg <= 180)) {
+				if (image[y - 1][x] > image[y][x] || image[y + 1][x] > image[y][x]) {
+					dest[y][x] = 0;
+				}
+			// vertical
+			} else if (angleDeg >= 67.5 && angleDeg <= 112.5) {
+				if (image[y][x - 1] > image[y][x] || image[y][x + 1] > image[y][x]) {
+					dest[y][x] = 0;
+				}
+				
+			// diagonal left
+			} else if (angleDeg >= 112.5 && angleDeg <= 157.5) {
+				if (image[y + 1][x - 1] > image[y][x] || image[y - 1][x + 1] > image[y][x]) {
+					dest[y][x] = 0;
+				}
+			// diagonal right
+			} else if (angleDeg >= 22.5 && angleDeg <= 67.5) {
+				if (image[y - 1][x - 1] > image[y][x] || image[y + 1][x + 1] > image[y][x]) {
+					dest[y][x] = 0;
+				}
+			}
 		}
 	}
+	std::cout << "min: " << min << "\n";
+	std::cout << "max: " << max << "\n";
+
 	image = dest;
 }
 
@@ -161,7 +170,7 @@ void Kernel::doubleThreshold(std::vector<std::vector<double>> &image, const Inte
 	}
 }
 
-void Kernel::tracking(std::vector<std::vector<double>> &image, const Intensity &weak, const Intensity &strong) {
+void Kernel::tracking(std::vector<std::vector<double>> &image, const Intensity &strong, const Intensity &weak) {
 	for (int y = 1; y < image.size() - 1; ++y) {
 		for (int x = 1; x < image[y].size() - 1; ++x) {
 			auto value = image[y][x];

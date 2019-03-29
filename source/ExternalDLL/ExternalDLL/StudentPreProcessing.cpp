@@ -25,15 +25,18 @@ IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &i
 	// non max
 	Kernel::nonMaxSupp(sobel, directions);
 	
-	std::array<double, 256> histogram;
-	Kernel::toHistogram(sobel, histogram);
 	const Intensity strong = 255;
 	const Intensity weak = 100;
-	const Intensity highTres = Kernel::otsu(sobel, histogram);
-	const Intensity lowTres = highTres / 2;
-	//Kernel::doubleThreshold(sobel, lowTres, highTres, strong, weak);
 	
-	//Kernel::tracking(sobel, weak, strong);
+	std::array<double, 256> histogram;
+	Kernel::toHistogram(sobel, histogram);
+	const Intensity highTres = Kernel::otsu(sobel, histogram) * 0.25;
+	const Intensity lowTres = highTres * 0.5;
+	//const Intensity highTres = 25;
+	//const Intensity lowTres = 10;
+	Kernel::doubleThreshold(sobel, lowTres, highTres, strong, weak);
+	
+	Kernel::tracking(sobel, strong, weak);
 
 	IntensityImage* img = ImageFactory::newIntensityImage(sobel[0].size(), sobel.size());
 	for (int y = 0; y < img->getHeight(); ++y) {
@@ -46,6 +49,7 @@ IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &i
 
 IntensityImage * StudentPreProcessing::stepThresholding(const IntensityImage &image) const {
 	IntensityImage* thresHolding = ImageFactory::newIntensityImage(image);
+	
 	for (int y = 0; y < thresHolding->getHeight(); ++y) {
 		for (int x = 0; x < thresHolding->getWidth(); ++x) {
 			thresHolding->setPixel(x, y,
