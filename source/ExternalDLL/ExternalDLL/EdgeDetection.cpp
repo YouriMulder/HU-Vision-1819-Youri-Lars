@@ -1,12 +1,23 @@
 #include "EdgeDetection.h"
 
-#include "ImageFactory.h"
+#include "IntensityImage.h"
 
 #include <vector>
 #include <iostream>
 #include <cmath>
 
-std::vector<std::vector<double>> EdgeDetection::applyGuassian(const IntensityImage &image) {
+
+EdgeDetection::imageVector EdgeDetection::imageVectorFromIntensityImage(const IntensityImage& image) {
+	EdgeDetection::imageVector output(image.getHeight(), std::vector<double>(image.getWidth(), 0));
+	for (int pixelY = 0; pixelY < image.getHeight(); ++pixelY) {
+		for (int pixelX = 0; pixelX < image.getWidth(); ++pixelX) {
+			output[pixelY][pixelX] = image.getPixel(pixelX, pixelY);
+		}
+	}
+	std::move(output);
+}
+
+EdgeDetection::imageVector EdgeDetection::applyGuassian(const EdgeDetection::imageVector &image) {
 	const int kernelSize = 5;
 	double gaussianKernel[kernelSize][kernelSize] = {};
 	const double pi = 3.14159265358979323846;
@@ -34,14 +45,14 @@ std::vector<std::vector<double>> EdgeDetection::applyGuassian(const IntensityIma
 	}
 
 	int size = kernelSize/2;
-	std::vector<std::vector<double>> output(image.getHeight() + 1 - kernelSize, std::vector<double>(image.getWidth() + 1 - kernelSize, 0));
-	for(int pixelX = size; pixelX < image.getWidth() - size; ++pixelX) {
-		for(int pixelY = size; pixelY < image.getHeight() - size; ++pixelY) {
+	EdgeDetection::imageVector output(image.size() + 1 - kernelSize, std::vector<double>(image[0].size() + 1 - kernelSize, 0));
+	for(int pixelY = size; pixelY < image.size() - size; ++pixelY) {
+		for(int pixelX = size; pixelX < image[pixelY].size() - size; ++pixelX) {
 			double sum = 0;
 
 			for (int x = 0; x < kernelSize; ++x) {
 				for (int y = 0; y < kernelSize; ++y) {
-					sum += gaussianKernel[x][y] * (double)(image.getPixel(pixelX + x - size, pixelY + y - size));
+					sum += gaussianKernel[x][y] * image[pixelY + y - size][pixelX + x - size];
 				}
 			}
 			output[pixelY - size][pixelX - size] = sum;
@@ -50,7 +61,7 @@ std::vector<std::vector<double>> EdgeDetection::applyGuassian(const IntensityIma
 	return std::move(output);
 }
 
-void EdgeDetection::sobelFilter(const std::vector<std::vector<double>> &sourceImage, std::vector<std::vector<double>> &destImage, std::vector<std::vector<double>> &directionImage) {
+void EdgeDetection::sobelFilter(const EdgeDetection::imageVector &sourceImage, EdgeDetection::imageVector &destImage, EdgeDetection::imageVector &directionImage) {
 	const int KERNEL_X = 3;
 	const int KERNEL_Y = 3;
 
@@ -103,7 +114,7 @@ void EdgeDetection::sobelFilter(const std::vector<std::vector<double>> &sourceIm
 	}
 }
 
-void EdgeDetection::nonMaxSupp(std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &angle) {
+void EdgeDetection::nonMaxSupp(EdgeDetection::imageVector &image, EdgeDetection::imageVector &angle) {
 
 	auto height = image.size() > angle.size() ? image.size() : angle.size();
 	auto width = image[0].size() > angle[0].size() ? image[0].size() : angle[0].size();
@@ -153,7 +164,7 @@ void EdgeDetection::nonMaxSupp(std::vector<std::vector<double>> &image, std::vec
 	image = dest;
 }
 
-void EdgeDetection::doubleThreshold(std::vector<std::vector<double>> &image, const Intensity& lowThreshold, const Intensity& highThreshold, const Intensity& strong, const Intensity& weak) {
+void EdgeDetection::doubleThreshold(EdgeDetection::imageVector &image, const Intensity& lowThreshold, const Intensity& highThreshold, const Intensity& strong, const Intensity& weak) {
 	for (int y = 0; y < image.size(); ++y) {
 		for (int x = 0; x < image[y].size(); ++x) {
 			auto value = image[y][x];
@@ -170,7 +181,7 @@ void EdgeDetection::doubleThreshold(std::vector<std::vector<double>> &image, con
 	}
 }
 
-void EdgeDetection::tracking(std::vector<std::vector<double>> &image, const Intensity &strong, const Intensity &weak) {
+void EdgeDetection::tracking(EdgeDetection::imageVector &image, const Intensity &strong, const Intensity &weak) {
 	for (int y = 1; y < image.size() - 1; ++y) {
 		for (int x = 1; x < image[y].size() - 1; ++x) {
 			auto value = image[y][x];
@@ -191,7 +202,7 @@ void EdgeDetection::tracking(std::vector<std::vector<double>> &image, const Inte
 	}
 }
 
-void EdgeDetection::toHistogram(const std::vector<std::vector<double>> &image, std::array<double, 256>& histogram) {
+void EdgeDetection::toHistogram(const EdgeDetection::imageVector &image, std::array<double, 256>& histogram) {
 	histogram.fill(0);
 	for (const auto row : image) {
 		for (const int value : row) {
@@ -200,7 +211,7 @@ void EdgeDetection::toHistogram(const std::vector<std::vector<double>> &image, s
 	}
 }
 
-double EdgeDetection::otsu(const std::vector<std::vector<double>> &image, std::array<double, 256>& histogram) {
+double EdgeDetection::otsu(const EdgeDetection::imageVector &image, std::array<double, 256>& histogram) {
 	int threshold = 0;
 
 	int total = image.size() * image[0].size();
