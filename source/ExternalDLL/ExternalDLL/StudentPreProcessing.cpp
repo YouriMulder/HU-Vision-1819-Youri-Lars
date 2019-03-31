@@ -1,9 +1,10 @@
 #include "StudentPreProcessing.h"
 
 #include "ImageFactory.h"
-#include "Kernel.h"
+#include "EdgeDetection.h"
 
-#include <iostream>
+#include <vector>
+#include <array>
 
 IntensityImage * StudentPreProcessing::stepToIntensityImage(const RGBImage &image) const {
 	return nullptr;
@@ -15,28 +16,28 @@ IntensityImage * StudentPreProcessing::stepScaleImage(const IntensityImage &imag
 
 IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &image) const {
 	// gaussian
-	std::vector<std::vector<double>> guassian = Kernel::applyGuassian(image);
+	std::vector<std::vector<double>> guassian = EdgeDetection::applyGuassian(image);
 	
 	// sobel
 	std::vector<std::vector<double>> directions(guassian.size(), std::vector<double>(guassian[0].size(), 0));
 	std::vector<std::vector<double>> sobel(guassian.size(), std::vector<double>(guassian[0].size(), 0));
-	Kernel::sobelFilter(guassian, sobel, directions);
+	EdgeDetection::sobelFilter(guassian, sobel, directions);
 
 	// non max
-	Kernel::nonMaxSupp(sobel, directions);
+	EdgeDetection::nonMaxSupp(sobel, directions);
 	
 	const Intensity strong = 255;
 	const Intensity weak = 100;
 	
 	std::array<double, 256> histogram;
-	Kernel::toHistogram(sobel, histogram);
-	const Intensity highTres = Kernel::otsu(sobel, histogram) * 0.25;
+	EdgeDetection::toHistogram(sobel, histogram);
+	const Intensity highTres = EdgeDetection::otsu(sobel, histogram);
 	const Intensity lowTres = highTres * 0.5;
 	//const Intensity highTres = 25;
 	//const Intensity lowTres = 10;
-	Kernel::doubleThreshold(sobel, lowTres, highTres, strong, weak);
+	EdgeDetection::doubleThreshold(sobel, lowTres, highTres, strong, weak);
 	
-	Kernel::tracking(sobel, strong, weak);
+	EdgeDetection::tracking(sobel, strong, weak);
 
 	IntensityImage* img = ImageFactory::newIntensityImage(sobel[0].size(), sobel.size());
 	for (int y = 0; y < img->getHeight(); ++y) {
