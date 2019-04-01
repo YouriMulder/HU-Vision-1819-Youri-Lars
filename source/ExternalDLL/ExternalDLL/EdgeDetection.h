@@ -8,7 +8,7 @@ namespace EdgeDetection {
 	typedef std::vector<std::vector<double>> imageVector;
 	
 	imageVector imageVectorFromIntensityImage(const IntensityImage& image);
-	imageVector applyGuassian(const imageVector &image);
+	imageVector applygaussian(const imageVector &image);
 	void sobelFilter(const imageVector &sourceImage, imageVector &destImage, imageVector &directionImage);
 	void nonMaxSupp(imageVector &image, imageVector &directions);
 	void doubleThreshold(imageVector &image, const Intensity& lowThreshold, const Intensity& highThreshold, const Intensity& strong, const Intensity& weak);

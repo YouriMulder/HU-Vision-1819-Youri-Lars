@@ -17,7 +17,7 @@ EdgeDetection::imageVector EdgeDetection::imageVectorFromIntensityImage(const In
 	return std::move(output);
 }
 
-EdgeDetection::imageVector EdgeDetection::applyGuassian(const EdgeDetection::imageVector &image) {
+EdgeDetection::imageVector EdgeDetection::applygaussian(const EdgeDetection::imageVector &image) {
 	const int kernelSize = 5;
 	double gaussianKernel[kernelSize][kernelSize] = {};
 	const double pi = 3.14159265358979323846;
@@ -214,23 +214,23 @@ double EdgeDetection::otsu(const EdgeDetection::imageVector &image, std::array<d
 
 	int total = image.size() * image[0].size();
 
-	double sum = 0;
-	double sumB = 0;
-	int wB = 0;
+	double totalIntensity = 0;
+	double totalIntensityBackground = 0;
+	int weightBackground = 0;
 	double maximum = 0;
 
 	for (int i = 0; i < histogram.size(); ++i) {
-		sum += i * histogram[i];
+		totalIntensity += i * histogram[i];
 	}
 
 	for (int i = 0; i < histogram.size(); ++i) {
-		wB += histogram[i];
-		int wF = total - wB;
-		if (wB == 0 || wF == 0) continue;
+		weightBackground += histogram[i];
+		int weightForeground = total - weightBackground;
+		if (weightBackground == 0 || weightForeground == 0) continue;
 
-		sumB += i * histogram[i];
-		auto mF = (sum - sumB) / wF;
-		double between = wB * wF * ((sumB / wB) - mF) * ((sumB / wB) - mF);
+		totalIntensityBackground += i * histogram[i];
+		auto meanForeground = (totalIntensity - totalIntensityBackground) / weightForeground;
+		double between = weightBackground * weightForeground * ((totalIntensityBackground / weightBackground) - meanForeground) * ((totalIntensityBackground / weightBackground) - meanForeground);
 		if (between >= maximum) {
 			threshold = i;
 			maximum = between;
