@@ -33,7 +33,7 @@ IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &i
 	
 	std::array<double, 256> histogram;
 	EdgeDetection::toHistogram(sobel, histogram);
-	const Intensity highTres = EdgeDetection::otsu(sobel, histogram);
+	const Intensity highTres = EdgeDetection::otsu(sobel, histogram) * 0.5;
 	const Intensity lowTres = highTres * 0.5;
 	//const Intensity highTres = 25;
 	//const Intensity lowTres = 10;

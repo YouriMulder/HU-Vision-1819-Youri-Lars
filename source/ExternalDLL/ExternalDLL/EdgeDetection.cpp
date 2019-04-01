@@ -14,7 +14,7 @@ EdgeDetection::imageVector EdgeDetection::imageVectorFromIntensityImage(const In
 			output[pixelY][pixelX] = image.getPixel(pixelX, pixelY);
 		}
 	}
-	std::move(output);
+	return std::move(output);
 }
 
 EdgeDetection::imageVector EdgeDetection::applyGuassian(const EdgeDetection::imageVector &image) {
@@ -158,8 +158,6 @@ void EdgeDetection::nonMaxSupp(EdgeDetection::imageVector &image, EdgeDetection:
 			}
 		}
 	}
-	std::cout << "min: " << min << "\n";
-	std::cout << "max: " << max << "\n";
 
 	image = dest;
 }
