@@ -17,7 +17,7 @@ EdgeDetection::imageVector EdgeDetection::imageVectorFromIntensityImage(const In
 	return std::move(output);
 }
 
-EdgeDetection::imageVector EdgeDetection::applyGuassian(const EdgeDetection::imageVector &image) {
+EdgeDetection::imageVector EdgeDetection::applygaussian(const EdgeDetection::imageVector &image) {
 	const int kernelSize = 5;
 	double gaussianKernel[kernelSize][kernelSize] = {};
 	const double pi = 3.14159265358979323846;

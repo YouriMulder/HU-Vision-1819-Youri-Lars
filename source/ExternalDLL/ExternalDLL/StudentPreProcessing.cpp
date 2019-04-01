@@ -18,12 +18,12 @@ IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &i
 	auto initialImage = EdgeDetection::imageVectorFromIntensityImage(image);
 	
 	// gaussian
-	EdgeDetection::imageVector guassian = EdgeDetection::applyGuassian(initialImage);
+	EdgeDetection::imageVector gaussian = EdgeDetection::applygaussian(initialImage);
 	
 	// sobel
-	EdgeDetection::imageVector directions(guassian.size(), std::vector<double>(guassian[0].size(), 0));
-	EdgeDetection::imageVector sobel(guassian.size(), std::vector<double>(guassian[0].size(), 0));
-	EdgeDetection::sobelFilter(guassian, sobel, directions);
+	EdgeDetection::imageVector directions(gaussian.size(), std::vector<double>(gaussian[0].size(), 0));
+	EdgeDetection::imageVector sobel(gaussian.size(), std::vector<double>(gaussian[0].size(), 0));
+	EdgeDetection::sobelFilter(gaussian, sobel, directions);
 
 	// non max
 	EdgeDetection::nonMaxSupp(sobel, directions);
