@@ -17,8 +17,22 @@ IntensityImage * StudentPreProcessing::stepScaleImage(const IntensityImage &imag
 IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &image) const {
 	auto initialImage = EdgeDetection::imageVectorFromIntensityImage(image);
 	
+	// test settings
+	//double sigma = 1; double tresholdFactor = 1;
+	//double sigma = 1; double tresholdFactor = 0.5;
+	//double sigma = 1; double tresholdFactor = 0.25;
+	
+	//double sigma = 1.5; double tresholdFactor = 1;
+	//double sigma = 1.5; double tresholdFactor = 0.5;
+	//double sigma = 1.5; double tresholdFactor = 0.25;
+	
+	//double sigma = 2; double tresholdFactor = 1;
+	//double sigma = 2; double tresholdFactor = 0.5;
+	double sigma = 0.5; double tresholdFactor = 0.25;
+
+
 	// gaussian
-	EdgeDetection::imageVector gaussian = EdgeDetection::applygaussian(initialImage);
+	EdgeDetection::imageVector gaussian = EdgeDetection::applyGaussian(initialImage, sigma);
 	
 	// sobel
 	EdgeDetection::imageVector directions(gaussian.size(), std::vector<double>(gaussian[0].size(), 0));
@@ -33,7 +47,10 @@ IntensityImage * StudentPreProcessing::stepEdgeDetection(const IntensityImage &i
 	
 	std::array<double, 256> histogram;
 	EdgeDetection::toHistogram(sobel, histogram);
-	const Intensity highTres = EdgeDetection::otsu(sobel, histogram) * 0.5;
+	
+	const Intensity highTres = EdgeDetection::otsu(sobel, histogram) * tresholdFactor;
+
+	
 	const Intensity lowTres = highTres * 0.5;
 	//const Intensity highTres = 25;
 	//const Intensity lowTres = 10;

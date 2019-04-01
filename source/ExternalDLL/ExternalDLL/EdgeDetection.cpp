@@ -17,12 +17,12 @@ EdgeDetection::imageVector EdgeDetection::imageVectorFromIntensityImage(const In
 	return std::move(output);
 }
 
-EdgeDetection::imageVector EdgeDetection::applygaussian(const EdgeDetection::imageVector &image) {
+EdgeDetection::imageVector EdgeDetection::applyGaussian(const EdgeDetection::imageVector &image, double sigma) {
+
 	const int kernelSize = 5;
 	double gaussianKernel[kernelSize][kernelSize] = {};
 	const double pi = 3.14159265358979323846;
 	// set standard deviation to 1.0
-	double sigma = 1;
 	double r, s = 2.0 * sigma * sigma;
 
 	// sum is for normalization
@@ -38,9 +38,9 @@ EdgeDetection::imageVector EdgeDetection::applygaussian(const EdgeDetection::ima
 	}
 
 	// normalize the Kernel
-	for (int i = 0; i < 5; ++i) {
-		for (int j = 0; j < 5; ++j) {
-			gaussianKernel[i][j] /= sum;
+	for (int y = 0; y < kernelSize; ++y) {
+		for (int x = 0; x < kernelSize; ++x) {
+			gaussianKernel[y][x] /= sum;
 		}
 	}
 
