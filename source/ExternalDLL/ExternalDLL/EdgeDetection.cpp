@@ -114,16 +114,16 @@ void EdgeDetection::sobelFilter(const EdgeDetection::imageVector &sourceImage, E
 	}
 }
 
-void EdgeDetection::nonMaxSupp(EdgeDetection::imageVector &image, EdgeDetection::imageVector &angle) {
+void EdgeDetection::nonMaxSupp(EdgeDetection::imageVector &image, const EdgeDetection::imageVector &directions) {
 
-	auto height = image.size() > angle.size() ? image.size() : angle.size();
-	auto width = image[0].size() > angle[0].size() ? image[0].size() : angle[0].size();
+	auto height = image.size() > directions.size() ? image.size() : directions.size();
+	auto width = image[0].size() > directions[0].size() ? image[0].size() : directions[0].size();
 	auto dest = image;
 	int min = 0;
 	int max = 0;
 	for (int y = 1; y < dest.size() - 1; ++y) {
 		for (int x = 1; x < dest[y].size() - 1; ++x) {
-			int angleDeg = (angle[y][x] * 180 / 3.14);
+			int angleDeg = (directions[y][x] * 180 / 3.14);
 			if (angleDeg < 0) {
 				angleDeg += 180;
 			}
@@ -209,10 +209,8 @@ void EdgeDetection::toHistogram(const EdgeDetection::imageVector &image, std::ar
 	}
 }
 
-double EdgeDetection::otsu(const EdgeDetection::imageVector &image, std::array<double, 256>& histogram) {
+double EdgeDetection::otsu(int totalAmountOfPixels , std::array<double, 256>& histogram) {
 	int threshold = 0;
-
-	int total = image.size() * image[0].size();
 
 	double totalIntensity = 0;
 	double totalIntensityBackground = 0;
@@ -225,7 +223,7 @@ double EdgeDetection::otsu(const EdgeDetection::imageVector &image, std::array<d
 
 	for (int i = 0; i < histogram.size(); ++i) {
 		weightBackground += histogram[i];
-		int weightForeground = total - weightBackground;
+		int weightForeground = totalAmountOfPixels - weightBackground;
 		if (weightBackground == 0 || weightForeground == 0) continue;
 
 		totalIntensityBackground += i * histogram[i];
