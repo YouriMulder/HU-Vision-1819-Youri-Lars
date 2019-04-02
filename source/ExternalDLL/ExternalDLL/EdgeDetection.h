@@ -12,7 +12,7 @@ namespace EdgeDetection {
 	@param image An Intensity image you want to convert to a imageVector.
 	@return An imageVector containing the pixels of the image.
 	@details
-	View the implementation plan chapter 1.4.1 for more details.
+	View the implementation plan chapter 1.5.1 for more details.
 	*/
 	imageVector imageVectorFromIntensityImage(const IntensityImage& image);
 	
@@ -22,7 +22,7 @@ namespace EdgeDetection {
 	@param sigma The sigma you want to use to create the guassian kernel.
 	@return An imageVector containing the image after applying the guassian filter.
 	@details
-	View the implementation plan chapter 1.4.2 for more details.
+	View the implementation plan chapter 1.5.2 for more details.
 	*/
 	imageVector applyGaussian(const imageVector &image, double sigma);
 	
@@ -32,7 +32,7 @@ namespace EdgeDetection {
 	@param destImage The image you want to store the intensities in after applying the sobel filter.
 	@param directionImage The image you want to store the gradient directions in.
 	@details
-	View the implementation plan chapter 1.4.3 for more details.
+	View the implementation plan chapter 1.5.3 for more details.
 	@warming
 	Watch out the size of the output vectors matter. No size checking is done.
 	*/
@@ -44,11 +44,11 @@ namespace EdgeDetection {
 	@param directions The gradient directions of the given pixel.
 	@param directionImage The image you want to store the gradient directions in.
 	@details
-	View the implementation plan chapter 1.4.4 for more details.
+	View the implementation plan chapter 1.5.4 for more details.
 	@warming
 	The gradient directions must be those of the given image.
 	*/
-	void nonMaxSupp(imageVector &image, imageVector &directions);
+	void nonMaxSupp(imageVector &image, const imageVector &directions);
 	
 	/*
 	@brief Applies double thresholding to an imageVector.
@@ -57,7 +57,7 @@ namespace EdgeDetection {
 	@param strong The value the pixel must be set to when higher than the highThreshold.
 	@param weak The value the pixel must be set to when between the lowThreshold and highThreshold.
 	@details
-	View the implementation plan chapter 1.4.5 for more details.
+	View the implementation plan chapter 1.5.5 for more details.
 	*/
 	void doubleThreshold(imageVector &image, const Intensity& lowThreshold, const Intensity& highThreshold, const Intensity& strong, const Intensity& weak);
 
@@ -67,7 +67,7 @@ namespace EdgeDetection {
 	@param strong The value of a weak edge.
 	@param weak The value of a strong edge.
 	@details
-	View the implementation plan chapter 1.4.7 for more details.
+	View the implementation plan chapter 1.5.6 for more details.
 	*/
 	void tracking(imageVector &image, const Intensity &strong, const Intensity &weak);
 	
@@ -75,15 +75,16 @@ namespace EdgeDetection {
 	@brief Creates histogram using an imageVector.
 	@param image The image you want to create a histogram of.
 	@param histogram The place you want to store the histogram.
+	@details View the implementation plan chapter 1.5.7 for more details.
 	*/
 	void toHistogram(const imageVector &image, std::array<double, 256> &histogram);
 	
 	/*
 	@brief Applies otsu to an image using the histogram.
-	@param image The image you want to apply otsu on.
+	@param totalAmountOfPixels The totalAmountOfPixels of the original image in the histogram.
 	@param histogram The histogram of the image.
 	@details
-	View the implementation plan chapter 1.4.8 for more details.
+	View the implementation plan chapter 1.5.8 for more details.
 	*/
-	double otsu(const imageVector &image, std::array<double, 256>& histogram);
+	double otsu(int totalAmountOfPixels, std::array<double, 256>& histogram);
 };
